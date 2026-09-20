@@ -1,10 +1,128 @@
 const express = require("express");
+const session = require("express-session");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
+app.use(session({
+  secret: "top-transportes-segredo",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false
+  }
+}));
+app.get("/login", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Login - Top Transportes</title>
+      <style>
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: #080808;
+          font-family: Arial, sans-serif;
+          color: white;
+        }
+
+        .login {
+          width: 90%;
+          max-width: 400px;
+          padding: 35px;
+          background: #111;
+          border: 1px solid #d4af37;
+          border-radius: 15px;
+          box-shadow: 0 0 30px rgba(212,175,55,.2);
+          text-align: center;
+        }
+
+        h1 {
+          color: #d4af37;
+          margin-bottom: 30px;
+        }
+
+        input {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 14px;
+          margin: 8px 0;
+          border: 1px solid #444;
+          border-radius: 8px;
+          background: #222;
+          color: white;
+          font-size: 16px;
+        }
+
+        button {
+          width: 100%;
+          padding: 14px;
+          margin-top: 18px;
+          border: none;
+          border-radius: 8px;
+          background: #d4af37;
+          color: #000;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="login">
+        <h1>TOP TRANSPORTES</h1>
+
+        <form method="POST" action="/login">
+          <input
+            type="text"
+            name="username"
+            placeholder="Usuário"
+            required
+          >
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Senha"
+            required
+          >
+
+          <button type="submit">ENTRAR</button>
+        </form>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+app.post("/login", (req, res) => {
+const usuario = process.env.APP_USER;
+const senha = process.env.APP_PASSWORD;
+  if (req.body.username === usuario && req.body.password === senha) {
+    req.session.loggedIn = true;
+    res.redirect("/");
+  } else {
+    res.status(401).send("Usuário ou senha incorretos.");
+  }
+});
+
+app.use((req, res, next) => {
+  if (req.session.loggedIn) {
+    next();
+  } else {
+    res.redirect("/login");
+  }
+});
 app.get("/", (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -1669,6 +1787,6 @@ telaInicial();
   `);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log("Top Transportes rodando em http://localhost:" + PORT);
 });
